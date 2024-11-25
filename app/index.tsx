@@ -1,12 +1,50 @@
+import { useEffect, useState } from 'react'
+import * as Location from 'expo-location'
 import {
   Text, StyleSheet, View, ScrollView, Dimensions,
+  ActivityIndicator,
 } from 'react-native'
 
+type Location = {
+  latitude: number
+  longitude: number
+}
+
+const API_KEY = 'f1295eeafdbc5de5f98edeb0f0f13f56'
+
 export default function Index () {
+  const [city, setCity] = useState('Loading...')
+  const [days, setDays] = useState<any[]>([])
+  const [ok, setOk] = useState(true)
+
+  const getWeather = async () => {
+    const { granted } = await Location.requestForegroundPermissionsAsync()
+    if (!granted) {
+      setOk(false)
+    }
+    const {
+      coords: { latitude, longitude },
+    } = await Location.getCurrentPositionAsync({ accuracy: 5 })
+
+    const location = await Location.reverseGeocodeAsync({ latitude, longitude })
+    console.log(location[0].city)
+    setCity(location[0].city || 'None')
+
+    // 날씨 api 가 401 에러가 남 ㅠㅠ
+    const response = await fetch(`https://api.openweathermap.org/data/2.5/forecast/daily?lat=${latitude}&lon=${longitude}&lang=kr&appid=${API_KEY}&units=metric`)
+    const json = await response.json()
+    console.log(json)
+    if (json.daily) setDays(json.daily)
+  }
+
+  useEffect(() => {
+    getWeather()
+  }, [])
+
   return (
     <View style={style.container}>
       <View style={style.city}>
-        <Text style={style.cityName}>Seoul</Text>
+        <Text style={style.cityName}>{city}</Text>
       </View>
       <ScrollView
         contentContainerStyle={style.weather}
@@ -14,18 +52,18 @@ export default function Index () {
         pagingEnabled
         showsHorizontalScrollIndicator={false}
       >
-        <View style={style.day}>
-          <Text style={style.temp}>27</Text>
-          <Text style={style.description}>Sunny</Text>
-        </View>
-        <View style={style.day}>
-          <Text style={style.temp}>27</Text>
-          <Text style={style.description}>Sunny</Text>
-        </View>
-        <View style={style.day}>
-          <Text style={style.temp}>27</Text>
-          <Text style={style.description}>Sunny</Text>
-        </View>
+        {days.length === 0
+          ? (
+              <View style={style.day}>
+                <ActivityIndicator style={{ marginTop: 10 }} color='white' size='large' />
+              </View>
+            )
+          : days.map(({ weather, temp }, index) => (
+            <View key={index} style={style.day}>
+              <Text style={style.temp}>{parseFloat(temp.day).toFixed(1)}</Text>
+              <Text style={style.description}>{weather[0].main}</Text>
+            </View>
+          ))}
       </ScrollView>
     </View>
   )
@@ -36,7 +74,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const style = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'tomato',
+    backgroundColor: 'skyblue',
   },
 
   city: {
