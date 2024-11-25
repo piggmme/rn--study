@@ -1,9 +1,23 @@
-import { useEffect, useState } from 'react'
+import { ComponentProps, useEffect, useState } from 'react'
 import * as Location from 'expo-location'
 import {
   Text, StyleSheet, View, ScrollView, Dimensions,
   ActivityIndicator,
 } from 'react-native'
+import { Fontisto } from '@expo/vector-icons'
+
+type FontistoNameType = ComponentProps<typeof Fontisto>['name']
+const icons: {
+  [key: string]: FontistoNameType
+} = {
+  Clouds: 'cloudy',
+  Clear: 'day-sunny',
+  Atmosphere: 'cloudy-gusts',
+  Snow: 'snow',
+  Rain: 'rains',
+  Drizzle: 'rain',
+  Thunderstorm: 'lightning',
+}
 
 type Location = {
   latitude: number
@@ -55,12 +69,16 @@ export default function Index () {
         {days.length === 0
           ? (
               <View style={style.day}>
+                <Fontisto name='cloudy' size={68} color='white' />
                 <ActivityIndicator style={{ marginTop: 10 }} color='white' size='large' />
               </View>
             )
-          : days.map(({ weather, temp }, index) => (
+          : days.map(({ weather, temp: { day } }, index) => (
             <View key={index} style={style.day}>
-              <Text style={style.temp}>{parseFloat(temp.day).toFixed(1)}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={style.temp}>{parseFloat(day).toFixed(1)}</Text>
+                <Fontisto name={icons[day.weather[0].main]} size={68} color='white' />
+              </View>
               <Text style={style.description}>{weather[0].main}</Text>
             </View>
           ))}
@@ -81,6 +99,7 @@ const style = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    color: 'white',
   },
 
   cityName: {
